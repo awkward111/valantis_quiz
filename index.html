@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Valantis Quiz</title>
+    <meta name="description" content="Valantis quiz — how well do you know Valantis?" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="stylesheet" href="style.css" />
+
+    <!-- Supabase keys (для общего realtime-лидерборда) -->
+    <script>
+      window.SUPABASE_URL = "https://vvpzzvhtdbqkopovrzxz.supabase.co";       /* твой Project URL */
+      window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2cHp6dmh0ZGJxa29wb3Zyenh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1NTQzMDAsImV4cCI6MjA3MjEzMDMwMH0.dGkaea-Ne8ZGFBCqsMllGfB_5BdBir-4VktG5QHwtTs";            /* твой anon public key */
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  </head>
+  <body>
+    <!-- Лого -->
+    <header class="site-header">
+      <a href="https://www.valantis.xyz" target="_blank" rel="noopener">
+        <img src="./valantis_logo.png" alt="Valantis logo" class="logo" height="28" />
+      </a>
+    </header>
+
+    <div class="bg-gradients" aria-hidden="true"></div>
+
+    <main class="center-wrap">
+      <section class="quiz-card" id="quiz-card" role="region" aria-live="polite">
+        <!-- Старт -->
+        <div id="start-screen" class="screen active">
+          <h1 class="brand-title">Valantis quiz</h1>
+          <p class="subtitle">How well do you know Valantis?</p>
+
+          <div class="name-wrap">
+            <label class="sr-only" for="player-name">Your name</label>
+            <input id="player-name" class="input" type="text" maxlength="24" placeholder="Enter your name" autocomplete="name" />
+            <span class="name-hint" id="name-preview" aria-hidden="true"></span>
+          </div>
+
+          <div class="cta-row">
+            <button id="start-btn" class="btn btn-primary">Start quiz</button>
+            <a class="btn btn-secondary" href="https://x.com/ValantisLabs" target="_blank" rel="noopener noreferrer">
+              Follow Valantis on X
+            </a>
+          </div>
+        </div>
+
+        <!-- Вопросы -->
+        <div id="quiz-screen" class="screen" hidden>
+          <div class="quiz-header">
+            <div class="badge" id="question-counter">Question 1 / 10</div>
+            <div class="timer" id="timer" aria-live="polite">20s</div>
+            <div class="spacer"></div>
+            <div class="player-pill">Player: <span id="player-name-display">Anon</span></div>
+          </div>
+
+          <div class="progress" aria-hidden="true">
+            <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+          </div>
+
+          <h2 id="question-text" class="question-text">Question goes here</h2>
+          <div id="options" class="options" role="listbox" aria-label="Answer options"></div>
+
+          <div class="controls">
+            <button id="next-btn" class="btn btn-primary" disabled>Next question</button>
+          </div>
+        </div>
+
+        <!-- Результат -->
+        <div id="result-screen" class="screen" hidden>
+          <h2 class="result-title">Your result, <span id="result-name">Anon</span></h2>
+          <p class="result-score">
+            <span id="score-raw">0/10</span>
+            <span class="muted">•</span>
+            <span id="score-pct">0%</span>
+          </p>
+          <p id="score-message" class="score-message">Message by score</p>
+
+          <div class="result-actions">
+            <button id="retry-btn" class="btn btn-primary">Try again</button>
+            <button id="share-btn" class="btn btn-secondary">Share on X</button>
+            <a class="btn btn-secondary" href="https://x.com/ValantisLabs" target="_blank" rel="noopener noreferrer">
+              Follow Valantis on X
+            </a>
+          </div>
+
+          <!-- Лидерборд -->
+          <div class="board">
+            <div class="board-head">
+              <h3 class="board-title">Leaderboard</h3>
+            </div>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Score</th>
+                    <th>%</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody id="leaderboard-body"></tbody>
+              </table>
+            </div>
+            <p class="tiny muted" id="board-hint">
+              Realtime via Supabase if configured; otherwise scores are stored locally in your browser.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="javascript.js"></script>
+  </body>
+</html>
