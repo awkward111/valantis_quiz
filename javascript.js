@@ -13,7 +13,6 @@ let   HAS_SUPABASE  = typeof window.supabase !== "undefined" && !!SUPABASE_URL &
 let   sb            = HAS_SUPABASE ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON) : null;
 
 /* =====================
-   ВОПРОСЫ (EN, уточнённые)
    ===================== */
 const BASE_QUESTIONS = [
   {
@@ -383,3 +382,4 @@ playerNameInput.addEventListener("input",(e)=>{
 
   await refreshBoard();
 })();
+
