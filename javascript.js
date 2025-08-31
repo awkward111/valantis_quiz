@@ -6,24 +6,106 @@ const QUESTION_TIME = 20;
 const STORAGE_NAME_KEY = "valantis_quiz_name";
 const STORAGE_BOARD_KEY = "valantis_quiz_leaderboard";
 
-// Supabase (глобальный realtime-лидерборд) + защищённый фолбэк на localStorage
+// Supabase (глобальный realtime-лидерборд) + фолбэк на localStorage
 const SUPABASE_URL  = (window.SUPABASE_URL || "").trim();
 const SUPABASE_ANON = (window.SUPABASE_ANON_KEY || "").trim();
 let   HAS_SUPABASE  = typeof window.supabase !== "undefined" && !!SUPABASE_URL && !!SUPABASE_ANON;
 let   sb            = HAS_SUPABASE ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON) : null;
 
-// ВОПРОСЫ (EN)
+/* =====================
+   ВОПРОСЫ (EN, уточнённые)
+   ===================== */
 const BASE_QUESTIONS = [
-  { q: "How does Valantis use a modular architecture to build DEXes?", options: ["Through centralized liquidity pools","Through custom modules with a shared data layer","Through separate DEXes for each module"], correct: 1 },
-  { q: "How is stHYPE integrated with Hyperliquid via HyperEVM?", options: ["By syncing with the Ethereum blockchain","Via a shared liquidity pool and synthetic tokens","By bridging between HyperEVM and Binance Smart Chain"], correct: 1 },
-  { q: "What is HyperCore’s role in the Valantis ecosystem?", options: ["Only for staking","A blockchain layer to run Valantis DEX modules","An analytics tool"], correct: 1 },
-  { q: "How does Valantis ensure the decentralization of stHYPE?", options: ["Through centralized validators","Through DAO voting and a permissionless architecture","Through integrations with centralized exchanges"], correct: 1 },
-  { q: "Which parameters of Valantis modules let DEXes adapt to different markets?", options: ["Fixed fees only","Custom parameters (limits, fees, liquidity)","A cap on the number of users"], correct: 1 },
-  { q: "How does the stHYPE integration strengthen the Valantis ecosystem?", options: ["By expanding liquidity pools and synthetic tokens","By centralizing staking operations","By limiting DEX module functionality"], correct: 0 },
-  { q: "How does Valantis achieve scalability for DEX modules?", options: ["By relying on centralized servers","Through a modular architecture and parallel transaction processing","By limiting the number of modules"], correct: 1 },
-  { q: "Which technical parameters determine stHYPE pool efficiency in Valantis?", options: ["TVL only","Transaction speed and fees","The complexity of the staking algorithm"], correct: 1 },
-  { q: "How does Valantis plan to expand the ecosystem beyond Hyperliquid?", options: ["By integrating with Ethereum only","By creating its own standalone blockchain","By bridging with other LST protocols"], correct: 2 },
-  { q: "How does Valantis provide liquidity in its DEX modules?", options: ["Through centralized pools","Through custom parameters and liquidity aggregation","By limiting the number of transactions"], correct: 1 }
+  {
+    q: "How does Valantis let teams build custom DEX pools?",
+    options: [
+      "By deploying separate DEXes per asset",
+      "By plugging fee/oracle/liquidity modules into Sovereign/Universal pools",
+      "By using centralized liquidity hubs"
+    ],
+    correct: 1
+  },
+  {
+    q: "What is stHYPE on HyperEVM?",
+    options: [
+      "A liquid staking token (LST) representing staked HYPE",
+      "A generic synthetic unrelated to staking",
+      "A governance token for the DEX"
+    ],
+    correct: 0
+  },
+  {
+    q: "What is HyperCore in Hyperliquid’s architecture?",
+    options: [
+      "An on-chain CLOB L1 for spot & perps that pairs with HyperEVM",
+      "A private blockchain run by Valantis",
+      "An off-chain analytics layer"
+    ],
+    correct: 0
+  },
+  {
+    q: "Post-acquisition, how is stHYPE operated?",
+    options: [
+      "Valantis Labs runs development/ops and deepens DEX/HyperCore integrations",
+      "By centralized validators on CEX",
+      "By a third-party foundation only"
+    ],
+    correct: 0
+  },
+  {
+    q: "Which parts of a Valantis pool are customizable?",
+    options: [
+      "Only fixed fees",
+      "Parameters via modules (fees, limits, oracle/liquidity logic)",
+      "Only the UI theme"
+    ],
+    correct: 1
+  },
+  {
+    q: "How does integrating stHYPE strengthen Valantis?",
+    options: [
+      "Dedicated LST pools and deeper liquidity routes with HyperCore/HyperEVM",
+      "Centralizing staking operations",
+      "Disabling DEX modules"
+    ],
+    correct: 0
+  },
+  {
+    q: "What primarily enables Valantis’ scalability?",
+    options: [
+      "Centralized servers",
+      "Building on HyperEVM while accessing HyperCore’s high-throughput CLOB",
+      "Limiting the number of modules"
+    ],
+    correct: 1
+  },
+  {
+    q: "What best indicates stHYPE pool efficiency for traders/LPs?",
+    options: [
+      "TVL alone",
+      "Execution quality (depth/slippage), fees and latency",
+      "Staking algorithm complexity"
+    ],
+    correct: 1
+  },
+  {
+    q: "Where is Valantis primarily deployed today?",
+    options: [
+      "On Hyperliquid’s HyperEVM, with links into HyperCore",
+      "Only on Ethereum mainnet",
+      "Only on Binance Smart Chain"
+    ],
+    correct: 0
+  },
+  {
+    q: "How is liquidity provided across Valantis pools?",
+    options: [
+      "Through centralized pools",
+      "Via custom modules and shared/embedded liquidity between pools",
+      "By capping transactions"
+    ],
+    correct: 1
+  }
 ];
 
 // UI
@@ -165,10 +247,7 @@ async function fetchBoard(){
 }
 
 async function pushResultToBoard(name, score, percent){
-  if (!HAS_SUPABASE) {
-    writeLocal(name, score, percent);
-    return;
-  }
+  if (!HAS_SUPABASE) { writeLocal(name, score, percent); return; }
   try {
     const { error } = await sb.from("scores").insert({ name, score, percent });
     if (error) throw error;
@@ -203,11 +282,10 @@ function renderBoardRows(rows){
 function escapeHTML(s){ return String(s).replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;" }[m])); }
 async function refreshBoard(){ const rows=await fetchBoard(); renderBoardRows(rows); }
 
-// realtime с переподпиской + авто-фолбэк при разрыве
+// realtime с переподпиской + фолбэк при разрыве
 let scoresChannel = null;
 function subscribeRealtime(){
   if (!HAS_SUPABASE) return;
-
   try { if (scoresChannel) sb.removeChannel(scoresChannel); } catch(e){}
 
   scoresChannel = sb.channel("public:scores");
@@ -219,11 +297,11 @@ function subscribeRealtime(){
     .subscribe((status) => {
       console.log("[Realtime] status:", status);
       if (status === "SUBSCRIBED" && boardHint) boardHint.textContent = "Realtime leaderboard is active (Supabase).";
-      if (status === "CLOSED" || status === "CHANNEL_ERROR") {
-        // Уйдём в локальный режим, чтобы пользователь всё равно видел результат
-        switchToLocalMode("Realtime disconnected — local leaderboard is used.");
-      }
+      if (status === "CLOSED" || status === "CHANNEL_ERROR") switchToLocalMode("Realtime disconnected — local leaderboard is used.");
     });
+
+  // подстрахуемся — при возвращении фокуса обновим таблицу
+  window.addEventListener("focus", refreshBoard);
 }
 
 function switchToLocalMode(reason){
@@ -232,7 +310,7 @@ function switchToLocalMode(reason){
   sb = null;
 }
 
-// --- Share в X (только имя+балл и @valantislabs, БЕЗ текстовой «оценки») ---
+// --- Share в X (только имя+балл и @valantislabs; без «оценочной» фразы) ---
 function shareOnX(name, score, percent){
   const pageUrl = window.location.href.split("#")[0];
   const paragraphs = [
@@ -249,7 +327,7 @@ async function showResult(){
   const percent = Math.round((correctCount/questions.length)*100);
   scoreRaw.textContent = `${correctCount}/${questions.length}`;
   scorePct.textContent = `${percent}%`;
-  const msg = resultMessage(correctCount); // На экране показываем, но в share не добавляем
+  const msg = resultMessage(correctCount);  // показываем на экране, но не в share
   scoreMsg.textContent = msg;
   resultName.textContent = playerName;
 
